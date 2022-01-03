@@ -21,8 +21,12 @@ window.onload = function() {
     imggg(imgtag22, star)
 
 
-    // console.log(11)
 
-    // document.querySelector('body').innerHTML = 'asdadasdasdadasd'
+
+    console.log('디파인 플로그인: ', process.env.NODE_ENV) //기본 mode 반환
+    console.log('디파인 플로그인: ', TWO) //숫자
+    console.log('디파인 플로그인: ', TWO2) // 문자열
+    console.log('디파인 플로그인: ', api.domain) // 객체형식
+    
 
 }
