@@ -5,6 +5,9 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const MyWebpackPlugin = require('./myWebpackPlugin');
 const webpack = require('webpack'); //웹팩 기본 플로그인은 여기있음
 const childProcess = require('child_process') // 터미널 명령어를 이거로 실행 할 수 있음 
+const optimizeCssAssetsWebpackPlugin= require('optimize-css-assets-webpack-plugin') // css 줄 줄여줌
+const terserPlugin = require('terser-webpack-plugin')
+const copyPlugin = require('copy-webpack-plugin')
 
 
 module.exports = {
@@ -30,11 +33,11 @@ module.exports = {
           },
           {
             test: /\.css$/,
-            use: ['style-loader', 'css-loader']
-            // use: [ { loader: MiniCssExtractPlugin.loader }, "css-loader" ] 
-            // use: [
-            //   {loader: process.env.NODE_ENV === 'production' ? MiniCssExtractPlugin.loader : 'style-loader'}, 'css-loader'
-            // ] // 이거 여기서 안됨 근데 버전 문제인듯 
+            // use: ['style-loader', 'css-loader'],
+            // use: [ { loader: MiniCssExtractPlugin.loader }, "css-loader" ],
+            use: [
+              {loader: process.env.NODE_ENV === 'production' ? MiniCssExtractPlugin.loader : 'style-loader'}, 'css-loader'
+            ] // 이거 여기서 안됨 근데 버전 문제인듯 
           },
           
           
@@ -121,7 +124,16 @@ module.exports = {
         }),
 
         // css 하나로 ..배포할 때만 하는게 좋음.. ??뭐야 문법 이렇게도 쓰네 ㅎㄸㄷ.....
-        ...(process.env.NODE_ENV === 'production' ? [ new MiniCssExtractPlugin({ filename: '[name].css' }) ] : [])
+        ...(process.env.NODE_ENV === 'production' ? [ new MiniCssExtractPlugin({ filename: '[name].css' }) ] : []),
+
+        
+        // 카피 플로그인 
+        new copyPlugin([
+          {
+            from: './node_modules/axios/dist? src?/axios.min.js', //어디에있는 패키지인지 
+            to: './axios.min.js' //어디로 복사할지
+          } // 이거 설정하고 index.html에도 src로 가져와야됨
+        ]),
         
 
     ],
@@ -180,7 +192,22 @@ module.exports = {
 
       },
       optimization : {
-        minimiser: process.env.NODE_ENV === 'production' ? [] : []
+        minimizer: process.env.NODE_ENV === 'production' ? [
+          new optimizeCssAssetsWebpackPlugin(), //css 합침
+          new terserPlugin({ 
+            terserOptions: {
+              compress: {
+                drop_console: true, //콘솔지우는
+              }
+            }
+          }) 
+        ] : [],
+        splitChunks: { // 이게 4번 코드스플리팅 소스옵션
+          chunks: "all" 
+        }
+      },
+      externals: { // 빌드할 때 axios를 사용하는 소스가 있으면 전역변수 axios를 사용해라
+        axios: 'axios',
       }
 
 }
