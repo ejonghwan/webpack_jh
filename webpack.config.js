@@ -23,10 +23,20 @@ module.exports = {
             ]
           },
           {
+            test: /\.js$/,
+            loader: 'babel-loader',
+            exclude: /node_modules/, //제외 할 피일
+            // exclude: ['/node_modules'], // 이렇겐 안되네 ..?
+          },
+          {
             test: /\.css$/,
             use: ['style-loader', 'css-loader']
-            // use: [ { loader: MiniCssExtractPlugin.loader },"css-loader" ]
+            // use: [ { loader: MiniCssExtractPlugin.loader }, "css-loader" ] 
+            // use: [
+            //   {loader: process.env.NODE_ENV === 'production' ? MiniCssExtractPlugin.loader : 'style-loader'}, 'css-loader'
+            // ] // 이거 여기서 안됨 근데 버전 문제인듯 
           },
+          
           
           // {
           //   test: /\.png|jpg|svg|gif|jpeg$/,
@@ -48,16 +58,32 @@ module.exports = {
               limit: 25000, //25kb이상 안넘어가는(작은) 것만 처리..data: asdasdasd 이런 문자열로. 넘지않는건 파일로더가 처리
             }
           },
-        //   {
-        //     test: /\.woff|woff2|eot|ttf|otf$/,
-        //     use: [{
-        //       loader: 'file-loader',
-        //       options: {
-        //         // name:'[name].[ext]?[hash]',
-        //         outputPath: './src/assets/font',
-        //       }
-        //     }]
-        //   },
+          // {
+          //   test: /\.woff|woff2|eot|ttf|otf$/,
+          //   use: [{
+          //     loader: 'file-loader',
+          //     options: {
+          //       // name:'[name].[ext]?[hash]',
+          //       outputPath: './src/assets/font',
+          //     }
+          //   }]
+          // },
+
+
+
+          /*
+            이건 걍 설정파일만 작성... .sass는 사스만 쓰는. .scss는 css같이쓰는
+            sass는 sass-loader (loader) 와 
+            node-sass (sass를 css로 컴파일)
+            두개 설치 
+          */
+          // {
+          //   test: /\.s[ac]ss$/i, //.(scss|css)
+          //   use: ['style-loader', 'css-loader', 'sass-loader',] 
+          //   //오른쪽부터 처리.. 사스를 css로 컴파일 후 commonsJS형태로 변환 후 html에 style에 추가
+          // }
+          
+
           
         ]
       },
@@ -95,21 +121,66 @@ module.exports = {
         }),
 
         // css 하나로 ..배포할 때만 하는게 좋음.. ??뭐야 문법 이렇게도 쓰네 ㅎㄸㄷ.....
-        ...( process.env.NODE_ENV === 'production' ? [ new MiniCssExtractPlugin({ filename: '[name].css' }) ] : [])
+        ...(process.env.NODE_ENV === 'production' ? [ new MiniCssExtractPlugin({ filename: '[name].css' }) ] : [])
         
 
     ],
 
     devServer: {
-        port: 9000,
-        contentBase: path.join(__dirname, "/src"),
-        // host : '127.0.0.1',
-        // contentBase: path.join(__dirname, "/"),
+        port: 9000, 
+        contentBase: path.join(__dirname, "/src"), // 경로지정
+        // host : '127.0.0.1', // 도메인 설정. 쿠키인증이나 그럴때 서버랑 도메인 맞출때 씀
         // compress: true,
         // hot : true,
         // inline: true,
-        // port: 9000,
-        // open : true
+        // open : true,
+        // overlay: true, // 콘솔이 아니라 화면에 출력할 때 
+        // state: 'none' // 'errors-only' 'minimal' 'normal' 'verbose' 메시지 수준 정함
+        before: app => { //express 처럼 쓸수도 있다
+          app.get('/api/users', (req, res) => {
+            res.json([
+             {
+              id: 1,
+              name: 'alice',
+             },
+             {
+              id: 2,
+              name: 'bek',
+             },
+             {
+              id: 3,
+              name: 'cree',
+             },
+            ])
+          })
+        },
+
+        //프론트에서 CORS 오류 해결방법 프록시 서버
+        // api로 요청을 시작하면 앞에 주소를 value에 주소로..  내부적으로 서버주소로 요청을 보냄 
+        proxy: { 
+          '/api': 'http://localhost:3000' // 서버주소
+        },
+        
+
+
+
+        // 핫 로딩 [HMR]! 버뀐 모듈만 리프래시됨.. 근데 이거만 하면 최적화는 안됨.. 
+        hot: true,
+        
+        /* 자세한건 강의에서 ..개인적으론 안쓸듯
+          index.js에서
+
+          if(module.hot) { console.log('핫 모듈 켜짐') }
+          module.hot.accept("/result", () => {
+            여기 안에다 갱신되는 함수들 다시 넣어주면 된다
+            console.log('result 모듈 변경됨')
+          })
+          
+        */ 
+
+      },
+      optimization : {
+        minimiser: process.env.NODE_ENV === 'production' ? [] : []
       }
 
 }
